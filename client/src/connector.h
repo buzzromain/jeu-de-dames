@@ -25,7 +25,7 @@ struct mes_game_type2 {
     char * message_type;
     char * code;
     int game_id;
-    int * board;
+    int ** board;
 };
 typedef struct mes_game_type2 mes_create_game;
 typedef struct mes_game_type2 mes_get_last_board_update;
@@ -33,7 +33,7 @@ typedef struct mes_game_type2 mes_get_last_board_update;
 struct mes_game_type3 {
     char * message_type;
     char * code;
-    int * board;
+    int ** board;
 };
 typedef struct mes_game_type3 mes_start_game;
 typedef struct mes_game_type3 mes_view_game;
@@ -44,6 +44,11 @@ struct mes_game_type4 {
     int * games_id;
 };
 typedef struct mes_game_type4 mes_list_game;
+
+/*
+    Fonctions utilitaires (à changer de fichier plus tard)
+*/
+int ** parse_stringify_board(char * stringify_board);
 
 /*
     Gestion utilisateur

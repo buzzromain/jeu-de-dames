@@ -4,13 +4,17 @@
 #include "response_handler.h"
 
 #define NB_SIMULTANEOUS_GAME 3
-#define BOARD_SIZE 100
+#define NB_LINES 10
+#define NB_COLUMNS 10
 
-//A faire plus tard
+//Pour la démo, structure de données simple (à completer plus tard).
 struct game {
-    int board[BOARD_SIZE];
+    int ** board;
 };
 typedef struct game game;
+
+//Variable globale au fichier.
+static game * current_game;
 
 /*
 Structure qui contient :
@@ -19,7 +23,7 @@ Structure qui contient :
 -TODO :
     -une liste de joueur.
     -le nombre de joueur.
-*/
+
 struct checkers {
     game * games;
     int nb_game;
@@ -27,8 +31,11 @@ struct checkers {
 typedef struct checkers checkers;
 
 static checkers * current_checkers;
+*/
 
+void init_board();
+void * start_game(char * username, char * password, char * game_id);
 void * create_account(char * username, char * password);
-void test_function(char * response_buffer);
+void init_game();
 
 #endif /* game_h */

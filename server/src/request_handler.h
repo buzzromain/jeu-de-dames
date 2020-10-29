@@ -5,6 +5,7 @@
 
 void * get_message_type(char * request);
 void * handle_create_account(char * request);
+void * handle_start_game(char * request);
 void * handle_request(char * request);
 
 #endif /* request_handler_h */
