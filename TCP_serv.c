@@ -1,28 +1,6 @@
-#include "TCP_serv.h"
+#include "Entete.h"
 
-void writeToGame(int * fildes,const char * buffer)
-{
-    if (write(fildes[1], buffer, GAME_BUFFER_SIZE) < 0) // On écrit le contenu de buf dans le pipe.
-    {
-            perror("Erreur ecriture" );  // Si l'écriture est impossible.
-            exit(1);
-    }
-}
-
-void readFromServ(int * fildes)
-{
-    char buf[20];
-    int count;
-    if ((count = read(fildes[0], buf, GAME_BUFFER_SIZE) < 0)) // On lit le contenu du pipe.
-    {
-            perror("Erreur lecture" ); // Si la lecture est impossible.
-            exit(1);
-    }
-    printf("Message réceptionné : %s\n", buf);           
-
-}
-
-static int init_connection(int port){
+int init_connection(int port){
     int socketServ;
 
     socketServ = socket(AF_INET, SOCK_STREAM, 0);
@@ -55,20 +33,34 @@ static int init_connection(int port){
    return socketServ;
 }
 
+void send_client(int sock, const char *buffer)
+{
+   if(send(sock, buffer, strlen(buffer), 0) < 0)
+   {
+      perror("send()");
+      exit(errno);
+   }
+}
 
-int servTCP(int socketServ,int * fildes){
+
+
+int servTCP(int socketServ,int IdMsgRequest){
     
 
     char buffer[BUFFER_SIZE];
+    
 
     int actual = 0;
     int max = socketServ;
+    int continuer = TRUE;
     
     Client clients[MAX_CLIENTS];
 
     fd_set rdfs;
 
-    while(1)
+    m_msg   msg_snd;
+
+    while(continuer == TRUE)
     {
 
 
@@ -124,28 +116,42 @@ int servTCP(int socketServ,int * fildes){
                 /* a client is talking */
                 if(FD_ISSET(clients[i].sock, &rdfs))
                 {
-                Client client = clients[i];
+                    Client client = clients[i];
 
-                n = 0;
-
-                if((n = recv(client.sock, buffer, BUFFER_SIZE - 1, 0)) < 0)
-                {
-                    perror("recv()");
-                    /* if recv error we disonnect the client */
                     n = 0;
-                }
 
-                buffer[n] = 0;   
+                    if((n = recv(client.sock, buffer, BUFFER_SIZE - 1, 0)) < 0)
+                    {
+                        perror("recv()");
+                        /* if recv error we disonnect the client */
+                        n = 0;
+                    }
+                    buffer[n] = 0;
 
-                /* Envoie du client à une fonction de traitement.  protocole.c ?  */
+                    if(n == 0)
+                    {
+                        close(clients[i].sock);
+                        memmove(clients + i, clients + i + 1, (actual - i - 1) * sizeof(Client));
+                        actual--;
+                    }
+                    else
+                    {
+                        sprintf(msg_snd.text, "%s", buffer);
+                        msg_snd.socket = clients[i].sock;
+                        msg_snd.type = 1;
 
-                writeToGame(fildes,buffer);
-                break;
-
+                        msgsnd(IdMsgRequest, &msg_snd, sizeof(msg_snd), 0);
+                        /* printf("\n\x1b[32m[Father]:\x1b[0m Send: %s,!%d  ",msg_snd.text,msg_snd.socket); */
+                        fflush(stdout);
+                    }
+                    if( strstr(buffer,"quit") !=  NULL ){
+                        continuer = FALSE;
+                    }
                 }
             }
         }
     }
+
 
     int i = 0;
     for(i = 0; i < actual; i++)
@@ -159,51 +165,3 @@ int servTCP(int socketServ,int * fildes){
 }
 
 
-
-
-int main(){
-
-    pid_t id;
-
-    int fildes[2];
-
-    pipe(fildes);
-
-    id = fork();
-    
-    if (id == 0) // On est dans le fils.
-    {
-            close(fildes[1]); // Fermer "write" end du pipe.
-
-            while(1)
-            {
-                readFromServ(fildes);         
-            }
-            sleep(2); 
-                
-                
-            close(fildes[0]); // Fermer "read end" du pipe.
-            exit(0);
-
-    } 
-    
-    else // On est dans le père.
-    {
-
-            close(fildes[0]); // Fermer "read-end" du pipe.
-                
-            fflush( stdout );
-
-            int socketServ = init_connection(1234);
-            servTCP(socketServ,fildes);
-
-            close(fildes[1]); // Fermer "write" end du pipe.
-                
-            id = wait(NULL); // On attend la terminaison du fils.
-
-    }
-
-	
-
-    return 0;
-}

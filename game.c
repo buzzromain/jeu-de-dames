@@ -1,4 +1,4 @@
-#include "game.h"
+#include "Entete.h"
 
 int ** initBoard( ){ 
 
@@ -315,9 +315,9 @@ void convertQueen(int ** tab){
     }
 
 }
-
-int main(){
 /* 
+int main(){
+
     int ** refBoard = initBoard( );
 
     for(int i=0;i<10;i++){
@@ -355,6 +355,7 @@ int main(){
 
      } 
     printf("GG %d \n",isVictory(refBoard));
- */
+ 
     return 0;
 }
+*/
