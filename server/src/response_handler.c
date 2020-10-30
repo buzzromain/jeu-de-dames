@@ -9,6 +9,12 @@ Auteur ...... : X
 
 #include "response_handler.h"
 
+/*
+    /!\
+    TODO : 
+        -Factoriser certaines parties du code qui font la même chose
+*/
+
 /**
 * Construit la réponse pour le client.
 * à la création d'une compte.
@@ -23,23 +29,56 @@ void * reply_create_account(char * code) {
     strcat(response, "message_type: CREATE_ACCOUNT\n");
     strcat(response, "code: ");
     strcat(response, code);
+    strcat(response, "\n");
 
     return response;
 }
 
 /**
 * Construit la réponse pour le client.
-* au lancement d'une partie.
+* à la connexion d'un utilisateur
 * 
 * \param code nom d'utilisateur
-* \param board le plateau de jeu à envoyer
 * \return la réponse du serveur
 */
-void * reply_start_game(char * code, int ** board) {
+void * reply_login(char * code) {
     //Construction de la requête vers le serveur 
     char * response = malloc(sizeof(char) * 1024);
     response[0] = '\0';
-    strcat(response, "message_type: START_GAME\n");
+    strcat(response, "message_type: LOGIN\n");
+    strcat(response, "code: ");
+    strcat(response, code);
+    strcat(response, "\n");
+
+    return response;
+}
+
+/**
+* Construit la réponse pour le client.
+* à la déconnexion d'un utilisateur.
+* 
+* \param code nom d'utilisateur
+* \return la réponse du serveur
+*/
+void * reply_disconnect(char * code) {
+    //Construction de la requête vers le serveur 
+    char * response = malloc(sizeof(char) * 1024);
+    response[0] = '\0';
+    strcat(response, "message_type: DISCONNECT\n");
+    strcat(response, "code: ");
+    strcat(response, code);
+    strcat(response, "\n");
+
+    return response;
+}
+
+void * reply_board_game(char * message_type, char * code, int ** board) {
+    //Construction de la requête vers le serveur 
+    char * response = malloc(sizeof(char) * 1024);
+    response[0] = '\0';
+    strcat(response, "message_type: ");
+    strcat(response, message_type);
+    strcat(response, "\n");
     strcat(response, "code: ");
     strcat(response, code);
     strcat(response, "\n");
@@ -58,4 +97,25 @@ void * reply_start_game(char * code, int ** board) {
     strcat(response, stringify_board);
     strcat(response, "\n");
     return response;
+}
+
+/**
+* Construit la réponse pour le client.
+* au lancement d'une partie.
+* 
+* \param code nom d'utilisateur
+* \param board le plateau de jeu à envoyer
+* \return la réponse du serveur
+*/
+
+void * reply_start_game(char * code, int ** board) {
+    return reply_board_game("START_GAME", code, board);
+}
+
+/**
+* Pour l'instant, cette fonction ne fait que renvoyer 
+* le plateau de jeu (à améliorer plus tard).
+*/
+void * reply_move_game(char * code, int ** board) {
+    return reply_board_game("MOVE_GAME", code, board);
 }

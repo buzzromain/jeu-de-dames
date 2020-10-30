@@ -2,6 +2,7 @@
 #define game_h
 
 #include "response_handler.h"
+#include "db.h"
 
 #define NB_SIMULTANEOUS_GAME 3
 #define NB_LINES 10
@@ -36,6 +37,9 @@ static checkers * current_checkers;
 void init_board();
 void * start_game(char * username, char * password, char * game_id);
 void * create_account(char * username, char * password);
+void * login(char * username, char * password);
+void * disconnect(char * username, char * password);
+void * move_game(char * username, char * password, char * game_id, int * initial_position, int * new_position);
 void init_game();
 
 #endif /* game_h */

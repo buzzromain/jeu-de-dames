@@ -10,6 +10,30 @@ Auteur ...... : X
 #include "game.h"
 
 /**
+* Permet de déplacer un pion
+*
+* \param current_game une partie.
+* \param initial_position position initiale du pion.
+* \param new_position la nouvelle position du pion.
+*/
+void move_draughts(game * current_game, int * initial_position, int * new_position) {
+    /*
+    Fonction a améliorer plus tard pour tenir en compte des règles du jeu.
+    (paramètre à changer : prendra en parametre un plateau de jeu plutot que la structure game)
+    */
+    int draughts_value = current_game->board[initial_position[0]][initial_position[1]];
+    current_game->board[initial_position[0]][initial_position[1]] = 0;
+    current_game->board[new_position[0]][new_position[1]] = draughts_value;
+}
+
+/*
+    /!\
+    TODO : 
+        -Factoriser le code de certaines fonctions liés à la gestion utilisateur
+        qui ont du code qui fait la même chose (à ce stade l'implementation des fonctionnalités).
+*/
+
+/**
 * Permet de créer un nouveau compte utilisateur
 * 
 * \param username nom d'utilisateur
@@ -17,19 +41,16 @@ Auteur ...... : X
 * \return la réponse du serveur
 */
 void * create_account(char * username, char * password) {
-    /*
-    Ici on effectue toutes les actions à effectuer pour créer un nouveau compte
-    Comme par exemple, vérifie que le joueur n'existe pas déjà.
-    */
-    //...
-    //Par Exemple : 
-    if(strcmp(username, "buzzromain") == 0 && strcmp(password, "superpassword") == 0) {
-        //On peut mettre des printf ici pour afficher des logs sur le serveur.
+    //Enregiste un nouvel utilisateur dans la base de donnée.
+    char * id = db_register_new_user(username, password);
+
+    //Si id vaut NULL, alors l'utilisateur existe déjà.
+    if(id == NULL) {
+        //On renvoie un code d'erreur spécifique
         return reply_create_account("USER_ALREADY_EXIST");
     }
     else {
-        //On peut mettre des printf ici pour afficher des logs sur le serveur.
-        return reply_create_account("OK");
+        return reply_create_account("OK"); 
     }
     
     //Libération de mémoire.
@@ -41,6 +62,74 @@ void * create_account(char * username, char * password) {
     qui est chargé de construire la réponse vers le client.
     */
     return reply_create_account("ERROR");
+}
+
+/**
+* Permet de connecter un utilisateur à son compte
+* 
+* \param username nom d'utilisateur
+* \param password le mot de passe de l'utilisateur
+* \return la réponse du serveur
+*/
+void * login(char * username, char * password) {
+    //Recupère l'identifiant de l'utilisateur dans la base de données.
+    char * id = db_login_user(username, password);
+
+    //Si id vaut NULL, alors l'utilisateur n'existe déjà.
+    if(id == NULL) {
+        //On renvoie un code d'erreur spécifique
+        return reply_login("INVALID_LOGIN");
+    }
+    else {
+        return reply_login("OK"); 
+    }
+    
+    //Libération de mémoire.
+    free(username);
+    free(password);
+
+    /*
+    Retourne une réponse en appelant la fonction reply_create_account
+    qui est chargé de construire la réponse vers le client.
+    */
+    return reply_login("ERROR");
+}
+
+/**
+* Permet de déconnecter un utilisateur de son compte
+* 
+* \param username nom d'utilisateur
+* \param password le mot de passe de l'utilisateur
+* \return la réponse du serveur
+*/
+
+void * disconnect(char * username, char * password) {
+    //Enregiste un nouvel utilisateur dans la base de donnée.
+    char * id = db_login_user(username, password);
+
+    //Si id vaut NULL, alors l'utilisateur n'existe pas.
+    if(id == NULL) {
+        //On renvoie un code d'erreur spécifique
+        return reply_disconnect("INVALID_LOGIN");
+    }
+    else {
+        return reply_disconnect("OK"); 
+    }
+    
+    /*
+    Rajouter plus tard ici, d'autres actions à effectuer
+    lorsqu'un utilisateur se deconnecte.
+    */
+
+    //Libération de mémoire.
+    free(username);
+    free(password);
+
+    /*
+    Retourne une réponse en appelant la fonction reply_create_account
+    qui est chargé de construire la réponse vers le client.
+    */
+    return reply_disconnect("ERROR");
 }
 
 /**
@@ -74,6 +163,22 @@ void init_board() {
 }
 
 /**
+* Permet de déplacer un pion.
+* 
+* \param username nom d'utilisateur
+* \param password le mot de passe de l'utilisateur
+* \param game_id l'identifiant de la partie
+* \param initial_position position initial du pion
+* \param new_position nouvelle position du pion
+* \return la réponse du serveur
+*/
+void * move_game(char * username, char * password, char * game_id, int * initial_position, int * new_position) {
+    //Pour le moment on renvoie le même plateau de jeu.
+    move_draughts(current_game, initial_position, new_position);
+    return reply_move_game("OK", current_game->board); 
+}
+
+/**
 * Permet de lancer une partie.
 * 
 * \param username nom d'utilisateur
@@ -87,7 +192,7 @@ void * start_game(char * username, char * password, char * game_id) {
     et on ne gère pas encore les erreurs.
     */
 
-    //Initialise le plateau de jeu.
+    //Initialise le plateau de jeu (à enlever car cela génère un nouveau plateau à chaque fois)
     init_board();
 
     /*
