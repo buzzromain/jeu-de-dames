@@ -9,6 +9,7 @@ Auteur ...... : X
 #include <stdlib.h>
 #include <string.h>
 #include "connector.h"
+#include <unistd.h>
 
 /*
 TODO : 
@@ -110,6 +111,9 @@ void * req_login(char * username, char * password) {
         else if(strcmp("code", first_part) == 0) {
             strcpy(mes->code, sec_part);
         }
+        else if(strcmp("nb_win_game", first_part) == 0) {
+            mes->nb_win_game = atoi(sec_part);
+        }
     } while ((p = strtok_r(NULL, "\n", &temp)) != NULL);
 
     //Libere la mémoire.
@@ -176,9 +180,62 @@ void * req_disconnect(char * username, char * password) {
 /**
 * Créer un nouveau compte
 */
-void * req_create_game() {
-    return NULL;
-    //TODO
+void * req_create_game(char * username, char * password) {
+    //Construction de la requête vers le serveur 
+    char * req = malloc(sizeof(char) * 1024);
+    req[0] = '\0';
+    strcat(req, "message_type: CREATE_GAME\n");
+    strcat(req, "\nusername: ");
+    strcat(req, username);
+    strcat(req, "\n");
+    strcat(req, "password: ");
+    strcat(req, password);
+    strcat(req, "\n");
+
+    //Envoie de la requête et récupération des données.
+    char * res = request(req);
+
+    //Structure facilement manipulable.
+    mes_create_game * mes = malloc(sizeof(mes_create_game));
+    mes->message_type = malloc(sizeof(char) * 100);
+    mes->code = malloc(sizeof(char) * 100);
+    mes->game_id = malloc(sizeof(char) * 10);
+
+    /*
+    Parse la réponse reçu par le serveur.
+    Code à factoriser plus tard.
+    */
+    char *p, *temp, *first_part, *sec_part;
+    
+    p = strtok_r(res, "\n", &temp);
+    do {
+        first_part = strtok(p, ": ");
+        sec_part = strtok(NULL, ": ");
+
+        if(strcmp("message_type", first_part) == 0) {
+            strcpy(mes->message_type, sec_part);
+        }
+        else if(strcmp("code", first_part) == 0) {
+            strcpy(mes->code, sec_part);
+        }
+        else if(strcmp("game_id", first_part) == 0) {
+            strcpy(mes->game_id, sec_part);
+        }
+        else if(strcmp("player_side", first_part) == 0) {
+            mes->player_side = atoi(sec_part);
+        }
+        else if(strcmp("board", first_part) == 0) {
+            mes->board = parse_stringify_board(sec_part);
+        }
+    } while ((p = strtok_r(NULL, "\n", &temp)) != NULL);
+   
+    //Libere la mémoire.
+    free(p);
+    free(temp);
+    free(req);
+    free(res);
+
+    return mes;
 }
 
 void * req_delete_game() {
@@ -186,15 +243,80 @@ void * req_delete_game() {
     //TODO
 }
 
-void * req_start_game(char * username, char * password, char * game_id) {
+void * req_join_game(char * username, char * password) {
     //Construction de la requête vers le serveur 
     char * req = malloc(sizeof(char) * 1024);
-    strcat(req, "message_type: START_GAME\n");
+    req[0] = '\0';
+    strcat(req, "message_type: JOIN_GAME\n");
     strcat(req, "\nusername: ");
     strcat(req, username);
     strcat(req, "\n");
     strcat(req, "password: ");
     strcat(req, password);
+    strcat(req, "\n");
+
+    //Envoie de la requête et récupération des données.
+    char * res = request(req);
+
+    //Structure facilement manipulable.
+    mes_join_game * mes = malloc(sizeof(mes_join_game));
+    mes->message_type = malloc(sizeof(char) * 100);
+    mes->code = malloc(sizeof(char) * 100);
+    mes->game_id = malloc(sizeof(char) * 10);
+
+    /*
+    Parse la réponse reçu par le serveur.
+    Code à factoriser plus tard.
+    */
+    char *p, *temp, *first_part, *sec_part;
+    
+    p = strtok_r(res, "\n", &temp);
+    do {
+        first_part = strtok(p, ": ");
+        sec_part = strtok(NULL, ": ");
+
+        if(strcmp("message_type", first_part) == 0) {
+            strcpy(mes->message_type, sec_part);
+        }
+        else if(strcmp("code", first_part) == 0) {
+            strcpy(mes->code, sec_part);
+        }
+        else if(strcmp("game_id", first_part) == 0) {
+            strcpy(mes->game_id, sec_part);
+        }
+        else if(strcmp("board", first_part) == 0) {
+            mes->board = parse_stringify_board(sec_part);
+        }
+    } while ((p = strtok_r(NULL, "\n", &temp)) != NULL);
+   
+    //Libere la mémoire.
+    free(p);
+    free(temp);
+    free(req);
+    free(res);
+    return mes;
+}
+
+void * req_quit_game() {
+    return NULL;
+    //TODO
+}
+
+void * req_view_game() {
+    return NULL;
+    //TODO
+}
+
+void * req_list_game() {
+    return NULL;
+    //TODO
+}
+
+void * req_get_last_game_update(char * game_id) {
+    //Construction de la requête vers le serveur 
+    char * req = malloc(sizeof(char) * 1024);
+    req[0] = '\0';
+    strcat(req, "message_type: GET_LAST_GAME_UPDATE\n");
     strcat(req, "\n");
     strcat(req, "game_id: ");
     strcat(req, game_id);
@@ -204,7 +326,7 @@ void * req_start_game(char * username, char * password, char * game_id) {
     char * res = request(req);
 
     //Structure facilement manipulable.
-    mes_start_game * mes = malloc(sizeof(mes_start_game));
+    mes_get_last_game_update * mes = malloc(sizeof(mes_get_last_game_update));
     mes->message_type = malloc(sizeof(char) * 100);
     mes->code = malloc(sizeof(char) * 100);
 
@@ -237,27 +359,6 @@ void * req_start_game(char * username, char * password, char * game_id) {
     free(res);
 
     return mes;
-
-}
-
-void * req_quit_game() {
-    return NULL;
-    //TODO
-}
-
-void * req_view_game() {
-    return NULL;
-    //TODO
-}
-
-void * req_list_game() {
-    return NULL;
-    //TODO
-}
-
-void * req_get_last_board_update() {
-    return NULL;
-    //TODO
 }
 
 void * req_move_game(char * username, char * password, char * game_id, int * initial_position, int * new_position) {

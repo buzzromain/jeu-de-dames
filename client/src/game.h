@@ -5,33 +5,45 @@
 #define NB_LINES 10
 
 #include "connector.h"
+#include "utils.h"
 
-struct user {
+struct player {
     char * username;
     char * password;
-    //D'autres données sur l'utilisateur peuvent être ajouter ici (nombre de parties gagnés, ...)
+    int nb_win_game;
 };
-typedef struct user user;
+typedef struct player player;
 
-static user * current_user;
-/**
-* Structure de données (incomplete) representant le plateau
-* de jeu.
-*/
+static player * current_player;
+
 struct game {
+    char * game_id;
     int ** board;
+    int player_side;
 };
 typedef struct game game;
 
 static game * current_game;
 
-void print_board(int ** board);
+void init_current_game();
+void free_current_game();
+
+void init_current_player();
+int is_connected_player();
+void free_current_player();
+
 void create_new_account();
 void disconnect();
+void login();
+
+void create_game();
+void start_game();
+void join_game();
+
 void run_game();
-void init_game();
-int * parse_position(char * stringify_position);
-int ** get_positions_by_parsing_user_input(char * user_input);
 int is_valid_move(int * initial_position, int * new_position);
+void print_board(int ** board);
+
+void print_connection_menu();
 
 #endif /* game_h */

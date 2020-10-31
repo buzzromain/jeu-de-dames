@@ -136,14 +136,13 @@ void * handle_disconnect(char * request) {
 }
 
 /**
-* Permet de lancer une partie.
+* Permet de gérer la création d'une partie
 * 
 * \return la réponse à la requête.
 */
-void * handle_start_game(char * request) {
+void * handle_create_game(char * request) {
     char * username = malloc(sizeof(char) * 100);
     char * password = malloc(sizeof(char) * 100);
-    char * game_id = malloc(sizeof(char) * 10);
     char * tmp_req = malloc(sizeof(char) * 1024);
     strcpy(tmp_req, request);
 
@@ -159,7 +158,66 @@ void * handle_start_game(char * request) {
         else if(strcmp("password", first_part) == 0) {
             strcpy(password, sec_part);
         }
-        else if(strcmp("game_id", first_part) == 0) {
+    } while ((p = strtok_r(NULL, "\n", &temp)) != NULL);
+
+    //Libere la mémoire.
+    free(p);
+    free(temp);
+    free(tmp_req);
+
+    return create_game(username, password);
+}
+
+/**
+* Permet de lancer une partie.
+* 
+* \return la réponse à la requête.
+*/
+void * handle_join_game(char * request) {
+    char * username = malloc(sizeof(char) * 100);
+    char * password = malloc(sizeof(char) * 100);
+    char * tmp_req = malloc(sizeof(char) * 1024);
+    strcpy(tmp_req, request);
+
+    //Parse la requête reçu par le serveur.
+    char *p, *temp, *first_part, *sec_part;
+    p = strtok_r(tmp_req, "\n", &temp);
+    do {
+        first_part = strtok(p, ": ");
+        sec_part = strtok(NULL, ": ");
+        if(strcmp("username", first_part) == 0) {
+            strcpy(username, sec_part);
+        }
+        else if(strcmp("password", first_part) == 0) {
+            strcpy(password, sec_part);
+        }
+    } while ((p = strtok_r(NULL, "\n", &temp)) != NULL);
+
+    //Libere la mémoire.
+    free(p);
+    free(temp);
+    free(tmp_req);
+
+    return join_game(username, password);
+}
+
+/**
+* Permet de recuperer une mise à jour de l'état de la partie
+* 
+* \return la réponse à la requête.
+*/
+void * handle_get_last_game_update(char * request) {
+    char * game_id = malloc(sizeof(char) * 10);
+    char * tmp_req = malloc(sizeof(char) * 1024);
+    strcpy(tmp_req, request);
+
+    //Parse la requête reçu par le serveur.
+    char *p, *temp, *first_part, *sec_part;
+    p = strtok_r(tmp_req, "\n", &temp);
+    do {
+        first_part = strtok(p, ": ");
+        sec_part = strtok(NULL, ": ");
+        if(strcmp("game_id", first_part) == 0) {
             strcpy(game_id, sec_part);
         }
     } while ((p = strtok_r(NULL, "\n", &temp)) != NULL);
@@ -169,8 +227,9 @@ void * handle_start_game(char * request) {
     free(temp);
     free(tmp_req);
 
-    return start_game(username, password, game_id);
+    return get_last_game_update(game_id);
 }
+
 
 /**
 * Permet de deplacement le pion d'une partie.
@@ -247,14 +306,18 @@ void * handle_request(char * request) {
     else if(strcmp("DISCONNECT", message_type) == 0) {
         return handle_disconnect(request);
     }
-    else if(strcmp("START_GAME", message_type) == 0) {
-        return handle_start_game(request);
+    else if(strcmp("CREATE_GAME", message_type) == 0) {
+        return handle_create_game(request);
     }
     else if(strcmp("MOVE_GAME", message_type) == 0) {
         return handle_move_game(request);
     }
+    else if(strcmp("GET_LAST_GAME_UPDATE", message_type) == 0) {
+        return handle_get_last_game_update(request);
+    }
+    else if(strcmp("JOIN_GAME", message_type) == 0) {
+        return handle_join_game(request);
+    }
     
-    
-
     return "Error";
 }

@@ -9,6 +9,9 @@ void * handle_create_account(char * request);
 void * handle_login(char * request);
 void * handle_disconnect(char * request);
 void * handle_start_game(char * request);
+void * handle_create_game(char * request);
+void * handle_get_last_game_update(char * request);
+void * handle_join_game(char * request);
 void * handle_request(char * request);
 
 #endif /* request_handler_h */

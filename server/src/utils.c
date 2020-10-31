@@ -63,3 +63,30 @@ int * parse_position(char * stringify_position) {
     }  
     return position;
 }
+
+/**
+* Transforme en chaîne de caractères un plateau de jeu
+* pour l'envoi du plateau de jeu au client.
+* 
+* \param board plateau de jeu
+* \return plateau de jeu en chaîne de caractères
+*/
+void * stringify_board(int ** board) {
+    char * tmp = malloc(sizeof(char) * 3);
+    tmp[0] = '\0';
+
+    char * stringify_board = malloc(sizeof(char) * 200);
+    stringify_board[0] = '\0';
+
+    for(int i = 0; i < 10; i++) {
+        for(int j = 0; j < 10; j++) {
+            sprintf(tmp, "%d,", board[i][j]);
+            strcat(stringify_board, tmp);
+        }
+    }
+    stringify_board[strlen(stringify_board) - 1] = '\0';
+
+    free(tmp);
+
+    return stringify_board;
+}

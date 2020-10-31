@@ -7,164 +7,60 @@ Auteur ...... : X
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <unistd.h>
 #include "game.h"
 
-
 /**
-* Fonction relatives à l'affichage du jeu
+* Initialise le joueur.
 */
+void init_current_player() {
+    current_player = malloc(sizeof(player));
+    current_player->username = malloc(sizeof(char) * 255);
+    current_player->password = malloc(sizeof(char) * 255);
+    current_player->nb_win_game = -1;
+}
 
 /**
-* Permet de renvoyer un caractères ASCII en prenant un nombre en paramètre
+* Enleve le joueur connecté
+*/
+void free_current_player() {
+   if(is_connected_player() == 1) {
+        free(current_player->username);
+        free(current_player->password);
+        free(current_player);
+   }
+}
+
+/**
+* Test si le joueur est connecté
 * 
-* \param nombre un nombre à convertir en ASCII
-* \return un caractère ASCII
+* \return 1 si le joueur est connecté, 0 sinon.
 */
-int int_to_ascii(int number) {
-   return '0' + number;
+int is_connected_player() {
+    if(current_player != NULL) {
+        return 1;
+    }
+    return 0;
 }
 
 /**
-* Met le texte de la console en bleu.
+* Initialise la partie
 */
-void blue_text_color() {
-    printf("\033[0;34m");
+void init_current_game() {
+    current_game = malloc(sizeof(game));
+    current_game->game_id = malloc(sizeof(char) * 10);
+    current_game->player_side = -1;
 }
 
 /**
-* Met le texte de la console en bleu.
+* Supprime la partie
 */
-void red_text_color() {
-    printf("\033[1;31m");
+void free_current_game() {
+    free(current_game->board);
+    free(current_game->game_id);
+    free(current_game);
 }
-
-/**
-* Met le texte de la console en couleur par défaut.
-*/
-void reset_text_color() {
-    printf("\033[0m");
-}
-
-/**
-* Affiche un pion blanc
-*/
-void print_white_draughts_man() {
-    red_text_color();
-    printf("%s ", "\u2B24");
-    reset_text_color();
-}
-
-/**
-* Affiche une dame blanche
-*/
-void print_white_draughts_king() {
-    red_text_color();
-    printf("%s ", "\u24C6");
-    reset_text_color();
-}
-
-/**
-* Affiche un pion noir
-*/
-void print_black_draughts_man() {
-    blue_text_color();
-    printf("%s ", "\u2B24");
-    reset_text_color();
-}
-
-/**
-* Affiche une dame noire
-*/
-void print_black_draughts_king() {
-    blue_text_color();
-    printf("%s ", "\u24C6");
-    reset_text_color();
-}
-
-/**
-* Parse une position saisit par l'utilisateur
-*
-* \param position une position à parser
-* \return tableau de la position
-*/
-int * parse_position(char * stringify_position) {
-    int * position = (int *)malloc(sizeof(int) * 2);
-    /*
-    Recupère position sous forme de tableau
-    */
-    if(stringify_position[0] == 'A') {
-        position[1] = 0;
-        position[0] = atoi(&stringify_position[1]) - 1;
-    }  
-    else if(stringify_position[0] == 'B') {
-        position[1] = 1;
-        position[0] = atoi(&stringify_position[1]) - 1;
-    }  
-    else if(stringify_position[0] == 'C') {
-        position[1] = 2;
-        position[0] = atoi(&stringify_position[1]) - 1;
-    }  
-    else if(stringify_position[0] == 'D') {
-        position[1] = 3;
-        position[0] = atoi(&stringify_position[1]) - 1;
-    }  
-    else if(stringify_position[0] == 'E') {
-        position[1] = 4;
-        position[0] = atoi(&stringify_position[1]) - 1;
-    }  
-    else if(stringify_position[0] == 'F') {
-        position[1] = 5;
-        position[0] = atoi(&stringify_position[1]) - 1;
-    }  
-    else if(stringify_position[0] == 'G') {
-        position[1] = 6;
-        position[0] = atoi(&stringify_position[1]) - 1;
-    }  
-    else if(stringify_position[0] == 'H') {
-        position[1] = 7;
-        position[0] = atoi(&stringify_position[1]) - 1;
-    }  
-    else if(stringify_position[0] == 'I') {
-        position[1] = 8;
-        position[0] = atoi(&stringify_position[1]) - 1;
-    }  
-    else if(stringify_position[0] == 'J') {
-        position[1] = 9;
-        position[0] = atoi(&stringify_position[1]) - 1;
-    }  
-    return position;
-}
-
-/**
-* Parse les positions saisit par l'utilisateur.
-* A faire : gestion des erreurs (très important).
-*
-* \param user_input positions saisit par l'utilisateur
-* \return tableau de positions (initiale et nouvelle position)
-*/
-
-int ** get_positions_by_parsing_user_input(char * user_input) {
-    int ** positions = (int **)malloc(sizeof(int *) * 2);
-
-    /*
-    Parse la chaîne de caractères pour récuperer position saisit 
-    par l'utilisateur.
-    */
-    char *first_pos, *sec_pos;
-    first_pos = strtok(user_input, "->");
-    sec_pos = strtok(NULL, "->");
-
-    positions[0] = parse_position(first_pos);
-    positions[1] = parse_position(sec_pos);
-
-    return positions;
-}
-
-/*
-TODO : 
-    -Modifier la fonction pour quelles prennent en paramètre un tableau 
-    2D et non un pointeur vers le jeu.
-*/
 
 /**
 * Affiche le plateau de jeu.
@@ -218,26 +114,49 @@ void create_new_account() {
     mes_create_account * res = req_create_account(username, password);
 
     /*
-    Par exemple on peut vérifie que la création du code s'est bien déroulé, 
+    On vérifie que la création du code s'est bien déroulé, 
     en testant si le code de retour est "OK".
     */
     if(strcmp(res->code, "OK") == 0) {
         /*
-        Si le code de retour est bon alors, on fait des actions comme actualiser une donnée dans le programme
-        et affiche un message à l'utilisateur pour le prevenir que l'opération s'est bien déroulé.
+        Si l'opération s'est bien déroulé, on met à jour la structure de données.
         */
-       printf("Compte créé avec succès !\n");
+        //Libère la mémoire utilisé si un utilisateur est déjà connecté.
+        free_current_player();
+        init_current_player();
+        strcpy(current_player->username, username);
+        strcpy(current_player->password, password);
+        current_player->nb_win_game = 0;
+        free(username);
+        free(password);
+        printf("Compte créé avec succès !\n");
     }
     else if(strcmp(res->code, "USER_ALREADY_EXIST") == 0) {
+        free(username);
+        free(password);
+
         //L'utilisateur existe déjà.
         printf("Impossible de créer un compte. Ce compte existe déjà !\n");
+
+        //On demande à l'utilisateur si il souhaite reessayer.
+        int choice = 0;
+        while(choice < 1 || choice > 2) {
+            printf("Souhaitez-vous réessayer ?\n");
+            printf("1. OUI\n");
+            printf("2. NON\n");
+            printf("Votre choix : ");
+            scanf("%d", &choice);
+            if(choice == 1) {
+                create_new_account();
+            }
+            else if(choice == 2) {
+                break;
+            }
+        }
     }
     else {
         printf("Une erreur du serveur est survenu\n");
     }
-
-    current_user->username = username;
-    current_user->password = password;
 }
 
 /**
@@ -259,33 +178,53 @@ void login() {
     mes_login * res = req_login(username, password);
 
     /*
-    Par exemple on peut vérifie que la création du code s'est bien déroulé, 
+    On vérifie que la création du code s'est bien déroulé, 
     en testant si le code de retour est "OK".
     */
     if(strcmp(res->code, "OK") == 0) {
-        /*
-        Si le code de retour est bon alors, on fait des actions comme actualiser une donnée dans le programme
-        et affiche un message à l'utilisateur pour le prevenir que l'opération s'est bien déroulé.
-        */
-       printf("Connexion avec succès !\n");
+        //Si l'opération s'est bien déroulé, on met à jour la structure
+        free_current_player();
+        init_current_player();
+        strcpy(current_player->username, username);
+        strcpy(current_player->password, password);
+        current_player->nb_win_game = res->nb_win_game;
+        free(username);
+        free(password);
+        printf("Connexion avec succès !\n");
     }
     else if(strcmp(res->code, "INVALID_LOGIN") == 0) {
+        free(username);
+        free(password);
+
         //L'utilisateur existe déjà.
         printf("Impossible de se connecter au compte. Les identifiants sont invalides.\n");
+
+        //On demande à l'utilisateur si il souhaite reessayer.
+        int choice = 0;
+        while(choice < 1 || choice > 2) {
+            printf("Souhaitez-vous réessayer ?\n");
+            printf("1. OUI\n");
+            printf("2. NON\n");
+            printf("Votre choix : ");
+            scanf("%d", &choice);
+            if(choice == 1) {
+                login();
+            }
+            else if(choice == 2) {
+                break;
+            }
+        }
     }
     else {
         printf("Une erreur du serveur est survenu\n");
     }
-
-    current_user->username = username;
-    current_user->password = password;
 }
 
 /**
 * Deconnexion de l'utilisateur
 */
 void disconnect() {
-    if(current_user->username != NULL) {
+    if(is_connected_player() == 1) {
         int choice = 0;
         //Demande à l'utilisateur de saisir son nom d'utilisateur et son mot de passe.
         system("clear");
@@ -299,17 +238,15 @@ void disconnect() {
         }
 
         if(choice == 1) {
-            mes_disconnect * res = req_disconnect(current_user->username, current_user->password);
+            mes_disconnect * res = req_disconnect(current_player->username, current_player->password);
             /*
-            Par exemple on peut vérifie que la création du code s'est bien déroulé, 
+            On vérifie que la création du code s'est bien déroulé, 
             en testant si le code de retour est "OK".
             */
             if(strcmp(res->code, "OK") == 0) {
-                /*
-                Si le code de retour est bon alors, on fait des actions comme actualiser une donnée dans le programme
-                et affiche un message à l'utilisateur pour le prevenir que l'opération s'est bien déroulé.
-                */
-            printf("Deconnexion avec succès !\n");
+                //Si l'opération s'est bien déroulé, on met à jour la structure
+                free_current_player();
+                printf("Deconnexion avec succès !\n");
             }
             else if(strcmp(res->code, "INVALID_LOGIN") == 0) {
                 //L'utilisateur existe déjà.
@@ -318,12 +255,7 @@ void disconnect() {
             else {
                 printf("Une erreur du serveur est survenu\n");
             }
-
-            free(current_user->username);
-            free(current_user->password);
-            current_user->username = NULL;
-            current_user->password = NULL;
-            }
+        }
         else {
             printf("OK, pas de souci !\n");
         }
@@ -349,25 +281,59 @@ int is_valid_move(int * initial_position, int * new_position) {
 }
 
 /**
-* Demarre une nouvelle partie.
-* Ceci est une démo, toutes les fonctionnalités n'ont pas été implementés.
+* Creer une nouvelle partie.
 */
-void start_game() {
-    //Le numero de la partie codé en dur (à changer plus tard)
-    char * game_id = "1";
+void create_game() {
     printf("Lancement du plateau de jeu...\n");
-    mes_start_game * res = req_start_game(current_user->username, current_user->password, game_id);
+
+    mes_create_game * res = req_create_game(current_player->username, current_player->password);
+
     if(strcmp(res->code, "OK") == 0) {
         //Affiche ici le plateau de jeu en appelant la fonction pour afficher le plateau de jeu (fonction à importer plus tard).
+        //Initialise la structure current_game
+        
+        init_current_game();
+
+        strcpy(current_game->game_id, res->game_id);
+        current_game->player_side = res->player_side;
         current_game->board = res->board;
+
+        mes_get_last_game_update * upd = req_get_last_game_update(current_game->game_id);
+        //Attente de l'arrivée du second joueur dans la partie.
+        
+        while(upd != NULL && strcmp(upd->code, "WAIT_FOR_SECOND_PLAYER") == 0) {
+            print_board(current_game->board);
+            printf("\nEN ATTENTE DU SECOND JOUEUR\n");
+            sleep(1);
+            //free(upd);
+            upd = req_get_last_game_update(current_game->game_id);
+        }
+        
+        mes_move_game * move_upd;
         char * user_input = malloc(sizeof(char) * 6);
         int ** positions;
         int * initial_position;
         int * new_position;
-        mes_move_game * upd;
 
         while(strcmp(user_input, "exit") != 0) {
+            /*
+            Ici boucle infini qui teste quel joueur à la main sur le jeu 
+            en faisant une requête au serveur.
+            */
+            //Attente de l'arrivée du second joueur dans la partie.
+            upd = req_get_last_game_update(current_game->game_id);
+            while(strcmp(upd->code, "WAIT_SECOND_PLAYER_MOVE") == 0) {
+                printf("coucou\n");
+                print_board(current_game->board);
+                printf("\nEN ATTENTE DE DEPLACEMENT DE PION DU SECOND JOUEUR\n");
+                sleep(1);
+                //free(upd);
+                upd = req_get_last_game_update(current_game->game_id);
+            }
+            //free(current_game->board);
+            current_game->board = upd->board;
             print_board(current_game->board);
+
             printf("Action : ");
             scanf("%s", user_input);
             if(strcmp(user_input, "exit") != 0) {
@@ -377,33 +343,28 @@ void start_game() {
                 //On verifie si le déplacement est autorisé.
                 if(is_valid_move(initial_position, new_position) == 1) {
                     //On envoie une requête au serveur.
-                    upd = req_move_game(current_user->username, current_user->password, game_id, initial_position, new_position);
+                    move_upd = req_move_game(current_player->username, current_player->password, current_game->game_id, initial_position, new_position);
 
                     //On vérifie si la requête à la demande à réussit.
-                    if(strcmp(upd->code, "OK") == 0) {
+                    if(strcmp(move_upd->code, "OK") == 0) {
                         //Si la requête a réussit, on actualise le plateau de jeu.
-                        free(current_game->board);
-                        current_game->board = upd->board;
+                        //free(current_game->board);
+                        current_game->board = move_upd->board;
                     }
                     else {
-                      
-                        /*
-                        Problème à regler ici.
-                        Ce message ne s'affichera jamais à cause de l'instruction
-                        system('clear') dans la fonction d'affichage du jeu.
-                        */
                         printf("Oups... Probleme");
                     }
                 }
 
                 //Libère la mémoire.
-                free(initial_position);
-                free(new_position);
-                free(positions);
-                free(upd);
+                //free(initial_position);
+                //free(new_position);
+                //free(positions);
             }
         }
-        free(user_input);
+        //free(res);
+        //free(user_input);
+        //free(upd);
     }
     else {
         //Si on a pas réussi à afficher le plateau de jeu, on affiche un message à l'utilisateur;
@@ -412,38 +373,134 @@ void start_game() {
 }
 
 /**
-* Initialise le jeu.
+* Rejoint une partie.
 */
-void init_game() {
-    current_game = malloc(sizeof(game));
-    current_user = malloc(sizeof(user));
-    current_user->username = NULL;
-    current_user->password = NULL;
+void join_game() {
+    /*
+    Pour tester, la fonction prend en paramètre game_id
+    plus tard la fonction devra lister des parties (en faisant appel à list_game()) et rejoindre une partie libre.
+    */
+    printf("Lancement du plateau de jeu...\n");
+    mes_join_game * res = req_join_game(current_player->username, current_player->password);
+
+    if(strcmp(res->code, "OK") == 0) {
+        //Affiche ici le plateau de jeu en appelant la fonction pour afficher le plateau de jeu (fonction à importer plus tard).
+        //Initialise la structure current_game
+        init_current_game();
+        strcpy(current_game->game_id, res->game_id);
+        current_game->player_side = 2;
+        current_game->board = res->board;
+
+        mes_get_last_game_update * upd = req_get_last_game_update(current_game->game_id);;
+
+        mes_move_game * move_upd;
+        char * user_input = malloc(sizeof(char) * 6);
+        int ** positions;
+        int * initial_position;
+        int * new_position;
+
+        while(strcmp(user_input, "exit") != 0) {
+            /*
+            Ici boucle infini qui teste quel joueur à la main sur le jeu 
+            en faisant une requête au serveur.
+            */
+            //Attente de l'arrivée du second joueur dans la partie.
+            upd = req_get_last_game_update(current_game->game_id);
+            while(upd != NULL && strcmp(upd->code, "WAIT_FIRST_PLAYER_MOVE") == 0) {
+                print_board(current_game->board);
+                printf("\nEN ATTENTE DE DEPLACEMENT DE PION DU PREMIER JOUEUR\n");
+                sleep(1);
+                //free(upd);
+                upd = req_get_last_game_update(current_game->game_id);
+            }
+            current_game->board = upd->board;
+            print_board(current_game->board);
+
+            printf("Action : ");
+            scanf("%s", user_input);
+            if(strcmp(user_input, "exit") != 0) {
+                positions = get_positions_by_parsing_user_input(user_input);
+                initial_position = positions[0];
+                new_position = positions[1];
+                //On verifie si le déplacement est autorisé.
+                if(is_valid_move(initial_position, new_position) == 1) {
+                    //On envoie une requête au serveur.
+                    move_upd = req_move_game(current_player->username, current_player->password, current_game->game_id, initial_position, new_position);
+
+                    //On vérifie si la requête à la demande à réussit.
+                    if(strcmp(move_upd->code, "OK") == 0) {
+                        //Si la requête a réussit, on actualise le plateau de jeu.
+                        //free(current_game->board);
+                        current_game->board = move_upd->board;
+                    }
+                    else {
+                        printf("Oups... Probleme");
+                    }
+                }
+
+                //Libère la mémoire.
+                //free(initial_position);
+                //free(new_position);
+                //free(positions);
+                //free(upd);
+                //free(move_upd);
+                //free(res);
+            }
+        }
+        //free(user_input);
+    }
+    else {
+        //Si on a pas réussi à afficher le plateau de jeu, on affiche un message à l'utilisateur;
+        printf("Oups, impossible de récupérer le plateau de jeu.\n");
+    }
 }
 
 /**
-* Fonction principale du jeu.
+* Menu de jeu.
 */
-void run_game() {  
-    //Initialise le jeu.
-    init_game();
-
+void print_game_menu() {
     int choice = 0;
-    /*
-    Pour tester les fonctions, à changer plus tard.
-    En effet, l'utilisateur doit pouvoir choisir seulement entre 
-    se connecter ou creer un compte lors de l'affichage du première écran du jeu.
-    */
     system("clear");
     printf("=== Jeu de dame en réseau === \n");
-    printf("   === Menu ===   \n");
-    printf("1. Créer un compte.\n");
-    printf("2. Se connecter\n");
-    printf("3. Se deconnecter\n");
-    printf("4. Rejoindre une partie\n");
+    printf("   === Partie ===   \n");
+    printf("1. Créer une partie.\n");
+    printf("2. Rejoindre une partie\n");
+    printf("3. Voir une partie\n");
+    printf("4. Se deconnecter\n");
     printf("Votre choix : ");
 
     while(choice < 1 || choice > 4) {
+        scanf("%d", &choice);  
+        if(choice == 1) {
+            create_game();
+        }
+        else if(choice == 2) {
+            join_game();
+        }
+        else if(choice == 3) {
+            //start_game();
+        }
+        else if(choice == 4) {
+            disconnect();
+        }
+    }
+}
+
+/**
+* Menu de connexion.
+*/
+
+void print_connection_menu() {
+    int choice = 0;
+    system("clear");
+    printf("=== Jeu de dame en réseau === \n");
+    printf("   === Connexion ===   \n");
+    printf("1. Créer un compte.\n");
+    printf("2. Se connecter\n");
+    printf("3. Quitter\n");
+    printf("Votre choix : ");
+
+    while(choice < 1 || choice > 3) {
         scanf("%d", &choice);  
         if(choice == 1) {
             //L'utilisateur décide de créer un compte.
@@ -454,25 +511,45 @@ void run_game() {
             login();
         }
         else if(choice == 3) {
-            //L'utilisateur décide de se deconnecter de son compte.
-            disconnect();
+            break;
         }
-        else if(choice == 4){
-            //L'utilisateur décide de lancer une nouvelle partie.
+    }
+}
 
-            
-            //On connecte l'utilisateur manuellement (à enlever plus tard, voir commentaire plus haut)
-            current_user->username = malloc(sizeof(char) * 255);
-            current_user->password = malloc(sizeof(char) * 255);
-            strcpy(current_user->username, "buzzromain");
-            strcpy(current_user->password, "superpassword");
-            
-            /*
-            Ceci est demo, on ne peut qu'afficher le plateau de jeu et déplacer
-            des pions sans tenir compte des règles et sans adversaire.
-            */
+/**
+* Fonction principale du jeu.
+*/
+void run_game() {  
+    int choice = 0;
 
-            start_game();
+    //Initialise manuellement l'utilisateur connecté (à modifier plus tard).
+    /*
+    init_current_player();
+    strcpy(current_player->username, "buzzromain");
+    strcpy(current_player->password, "superpassword");
+    current_player->nb_win_game = -1;
+    mes_login * log = req_login(current_player->username, current_player->password);
+    */
+
+    while(choice != 2) {
+        system("clear");
+        printf("=== Jeu de dame en réseau === \n");
+        printf("   === Menu principale ===   \n");
+        if(is_connected_player() == 0) {
+            printf("1. Se connecter\n");
+        }
+        else if(is_connected_player() == 1) {
+            printf("1. Jouer\n");
+        }
+        printf("2. Quitter le jeu\n");
+        printf("Votre choix : ");
+        scanf("%d", &choice);
+
+        if(choice == 1 && is_connected_player() == 0) {
+            print_connection_menu();
+        }
+        else if(choice == 1 && is_connected_player() == 1){
+            print_game_menu();
         }
     }
 }
